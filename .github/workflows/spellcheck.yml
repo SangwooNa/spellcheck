@@ -1,7 +1,11 @@
-name: Spellcheck with py-hanspell
+name: Spellcheck Excel File
 
 on:
-  workflow_dispatch: # 수동으로 워크플로 실행
+  workflow_dispatch:
+    inputs:
+      file_name:
+        description: 'File name for spellcheck'
+        required: true
 
 jobs:
   spellcheck:
@@ -18,7 +22,17 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install py-hanspell
+          pip install hanspell openpyxl
 
       - name: Run spellcheck
         run: python spellcheck.py
+
+      - name: Save results
+        run: |
+          cp output.html ./output/output.html
+
+      - name: Upload results to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./output
