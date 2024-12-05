@@ -1,28 +1,16 @@
-import os
-import openpyxl
-import requests
+from hanspell import spell_checker
 
-# 네이버 맞춤법 검사 API 호출
-def spell_check(text):
-    url = "https://m.search.naver.com/p/csearch/ocontent/util/SpellerProxy"
-    params = {"q": text, "where": "nexearch"}
-    response = requests.get(url, params=params)
-    if response.status_code == 200:
-        data = response.text.replace("window.__jindo2_callback._speller(", "").rstrip(");")
-        return data
-    return None
+def check_spelling(text):
+    """맞춤법 검사 함수"""
+    result = spell_checker.check(text)
+    if result.errors:
+        print(f"Original: {text}")
+        print(f"Corrected: {result.checked}")
+        print(f"Errors: {result.errors}")
+    else:
+        print(f"No errors found in: {text}")
 
-# 엑셀 파일 로드
-file_name = os.getenv("FILE_NAME")
-wb = openpyxl.load_workbook(file_name)
-ws = wb.active
-
-# 맞춤법 검사 수행
-for row in ws.iter_rows(values_only=True):
-    for cell in row:
-        if cell:
-            result = spell_check(cell)
-            print(f"Original: {cell}, Corrected: {result}")
-
-# 결과 저장
-wb.save("corrected.xlsx")
+if __name__ == "__main__":
+    # 검사할 텍스트를 입력하세요.
+    sample_text = "이것은 맞춤법 검사 테스트입니다. 안돼 안돼!"
+    check_spelling(sample_text)
