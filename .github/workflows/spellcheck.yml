@@ -1,0 +1,29 @@
+name: Spellcheck Excel File
+
+on:
+  workflow_dispatch:
+    inputs:
+      file:
+        description: 'Upload an Excel file for spellcheck'
+        required: true
+
+jobs:
+  spellcheck:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        pip install openpyxl requests
+
+    - name: Run spellcheck
+      run: python spellcheck.py
+      env:
+        FILE_NAME: ${{ github.event.inputs.file }}
