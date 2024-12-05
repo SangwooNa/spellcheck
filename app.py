@@ -53,7 +53,7 @@ def preprocess_excel(file):
         df.fillna(method="ffill", inplace=True)
 
         # 중복된 열 이름 해결
-        df.columns = pd.io.parsers.ParserBase({'names': df.columns})._maybe_dedup_names(df.columns)
+        df.columns = pd.io.parsers.make_unique(df.columns)
 
         # 진행 완료 메시지
         progress_text.text("전처리 완료!")
@@ -64,7 +64,7 @@ def preprocess_excel(file):
     except Exception as e:
         st.error(f"데이터 전처리 중 오류 발생: {e}")
         return pd.DataFrame()
-
+        
 def highlight_spell_errors(df):
     """맞춤법 검사 및 강조 스타일 추가"""
     corrected_df = df.copy()
