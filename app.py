@@ -16,21 +16,32 @@ def check_spelling(text):
     return text  # API 호출 실패 시 원본 반환
 
 def preprocess_excel(file):
-    """엑셀 데이터 전처리"""
+    """엑셀 데이터 전처리 및 진행률 표시"""
     try:
         wb = openpyxl.load_workbook(file, data_only=True)
         ws = wb.active
         if ws is None:
             raise ValueError("엑셀 파일에 활성화된 워크시트가 없습니다.")
-        
-        # 엑셀 데이터를 리스트로 변환
+
+        # 초기화
         data = []
-        for row in ws.iter_rows(values_only=True):
+        total_rows = len(list(ws.rows))
+        progress = 0
+        progress_bar = st.progress(0)
+        progress_text = st.empty()
+
+        # 엑셀 데이터를 리스트로 변환
+        for i, row in enumerate(ws.iter_rows(values_only=True), 1):
             data.append([cell if cell is not None else "" for cell in row])
-        
+
+            # 진행률 업데이트
+            progress = int((i / total_rows) * 100)
+            progress_bar.progress(progress / 100)
+            progress_text.text(f"전처리 진행률: {progress}%")
+
         # 데이터프레임 생성
         df = pd.DataFrame(data)
-        
+
         # 헤더 추출: "번 호", "성 명", "학 년"이 포함된 행
         header_row = df.apply(
             lambda row: row.astype(str).str.contains("번 호|성 명|학 년", na=False).any(), axis=1
@@ -40,6 +51,10 @@ def preprocess_excel(file):
 
         # 빈 셀 처리 및 앞의 데이터로 채우기
         df.fillna(method="ffill", inplace=True)
+
+        # 진행 완료 메시지
+        progress_text.text("전처리 완료!")
+        progress_bar.empty()
 
         return df
 
@@ -99,7 +114,7 @@ def render_interactive_table(df, error_map):
     return html_table
 
 # Streamlit 앱 UI
-st.title("엑셀 맞춤법 검사기v2")
+st.title("엑셀 맞춤법 검사기")
 st.write("업로드한 엑셀 데이터를 브라우저에서 처리하고, 맞춤법 검사를 수행합니다.")
 
 # 엑셀 파일 업로드
