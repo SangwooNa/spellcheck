@@ -1,29 +1,24 @@
-name: Spellcheck Excel File
+name: Spellcheck with py-hanspell
 
 on:
-  workflow_dispatch:
-    inputs:
-      file:
-        description: 'Upload an Excel file for spellcheck'
-        required: true
+  workflow_dispatch: # 수동으로 워크플로 실행
 
 jobs:
   spellcheck:
     runs-on: ubuntu-latest
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.x'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.x
 
-    - name: Install dependencies
-      run: |
-        pip install openpyxl requests
+      - name: Install dependencies
+        run: |
+          pip install py-hanspell
 
-    - name: Run spellcheck
-      run: python spellcheck.py
-      env:
-        FILE_NAME: ${{ github.event.inputs.file }}
+      - name: Run spellcheck
+        run: python spellcheck.py
