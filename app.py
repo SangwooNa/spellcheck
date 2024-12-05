@@ -127,11 +127,15 @@ if uploaded_file:
 
     if not processed_data.empty:
         st.write("### 전처리된 데이터")
-        # 맞춤법 검사 수행
-        corrected_data, error_map = highlight_spell_errors(processed_data)
+        st.dataframe(processed_data, use_container_width=True)  # 전처리 결과 테이블 표시
 
-        # 인터랙티브 테이블 생성
-        html_table = render_interactive_table(processed_data, error_map)
-        st.markdown(html_table, unsafe_allow_html=True)
+        # 맞춤법 검사 수행
+        if st.button("맞춤법 검사 시작"):
+            st.write("맞춤법 검사를 수행 중입니다...")
+            corrected_data, error_map = highlight_spell_errors(processed_data)
+
+            # 인터랙티브 테이블 생성
+            html_table = render_interactive_table(processed_data, error_map)
+            st.markdown(html_table, unsafe_allow_html=True)
     else:
         st.warning("전처리된 데이터가 비어 있습니다.")
