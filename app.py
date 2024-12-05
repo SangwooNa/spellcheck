@@ -53,7 +53,7 @@ def preprocess_excel(file):
         df.fillna(method="ffill", inplace=True)
 
         # 중복된 열 이름 해결
-        df.columns = pd.io.parsers.make_unique(df.columns)
+        df.columns = _resolve_duplicate_columns(df.columns)
 
         # 진행 완료 메시지
         progress_text.text("전처리 완료!")
@@ -64,6 +64,19 @@ def preprocess_excel(file):
     except Exception as e:
         st.error(f"데이터 전처리 중 오류 발생: {e}")
         return pd.DataFrame()
+
+def _resolve_duplicate_columns(columns):
+    """중복된 열 이름 해결"""
+    seen = {}
+    new_columns = []
+    for col in columns:
+        if col not in seen:
+            seen[col] = 0
+            new_columns.append(col)
+        else:
+            seen[col] += 1
+            new_columns.append(f"{col}.{seen[col]}")
+    return new_columns
         
 def highlight_spell_errors(df):
     """맞춤법 검사 및 강조 스타일 추가"""
