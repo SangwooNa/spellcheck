@@ -2,6 +2,7 @@ import streamlit as st
 import openpyxl
 import pandas as pd
 import requests
+from io import BytesIO
 
 # 맞춤법 검사 함수
 def check_spelling(text):
@@ -19,7 +20,9 @@ def process_excel(file):
     wb = openpyxl.load_workbook(file)
     ws = wb.active
 
-    data = []
+    original_data = []
+    corrected_data = []
+
     for row in ws.iter_rows(values_only=True):
         original_row = []
         corrected_row = []
@@ -31,38 +34,48 @@ def process_excel(file):
             else:
                 original_row.append(cell)
                 corrected_row.append(cell)
-        data.append({"Original": original_row, "Corrected": corrected_row})
-    return data
+        original_data.append(original_row)
+        corrected_data.append(corrected_row)
+
+    return original_data, corrected_data
+
+def highlight_differences(original, corrected):
+    """수정이 필요한 부분에 강조 표시"""
+    styled_data = []
+    for orig_row, corr_row in zip(original, corrected):
+        styled_row = []
+        for orig, corr in zip(orig_row, corr_row):
+            if orig != corr:
+                # 수정이 필요한 경우 강조
+                styled_row.append(f"<span style='color: red;'>{corr}</span>")
+            else:
+                styled_row.append(orig)
+        styled_data.append(styled_row)
+    return styled_data
 
 # Streamlit 앱 UI
 st.title("엑셀 맞춤법 검사기")
-st.write("업로드된 데이터와 수정된 데이터를 웹에서 확인하세요.")
+st.write("업로드한 엑셀 파일을 테이블로 표현하고 수정된 부분을 강조합니다.")
 
 # 파일 업로드
 uploaded_file = st.file_uploader("엑셀 파일 업로드", type=["xlsx"])
 
 if uploaded_file:
-    st.write("파일을 처리 중입니다...")
-    data = process_excel(uploaded_file)
+    # 엑셀 파일 처리
+    original_data, corrected_data = process_excel(uploaded_file)
 
-    # 결과 테이블 생성
-    st.write("맞춤법 검사 결과:")
-    for i, row in enumerate(data):
-        st.markdown(f"### Row {i + 1}")
-        original = row["Original"]
-        corrected = row["Corrected"]
+    # 데이터프레임 생성
+    original_df = pd.DataFrame(original_data)
+    corrected_df = pd.DataFrame(corrected_data)
 
-        for j, (orig, corr) in enumerate(zip(original, corrected)):
-            if orig != corr:
-                # 수정이 필요한 부분 강조
-                st.markdown(
-                    f"- **Cell {j + 1}:** {orig} → <span style='color:red;'>{corr}</span>",
-                    unsafe_allow_html=True,
-                )
-                # 팝업 링크
-                if st.button(f"Cell {j + 1} 수정 보기 (Row {i + 1})", key=f"{i}-{j}"):
-                    st.write(f"**원본 텍스트:** {orig}")
-                    st.write(f"**수정된 텍스트:** {corr}")
-            else:
-                st.markdown(f"- **Cell {j + 1}:** {orig}")
+    # 수정된 데이터를 HTML로 표시
+    styled_corrected_data = highlight_differences(original_data, corrected_data)
 
+    # 원본 데이터 테이블
+    st.write("### 원본 데이터")
+    st.dataframe(original_df, use_container_width=True)
+
+    # 수정된 데이터 테이블 (강조된 부분 포함)
+    st.write("### 수정된 데이터")
+    styled_corrected_df = pd.DataFrame(styled_corrected_data)
+    st.write(styled_corrected_df.to_html(escape=False, index=False), unsafe_allow_html=True)
