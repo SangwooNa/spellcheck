@@ -52,6 +52,9 @@ def preprocess_excel(file):
         # 빈 셀 처리 및 앞의 데이터로 채우기
         df.fillna(method="ffill", inplace=True)
 
+        # 중복된 열 이름 해결
+        df.columns = pd.io.parsers.ParserBase({'names': df.columns})._maybe_dedup_names(df.columns)
+
         # 진행 완료 메시지
         progress_text.text("전처리 완료!")
         progress_bar.empty()
