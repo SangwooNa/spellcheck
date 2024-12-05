@@ -16,10 +16,18 @@ def check_spelling(text):
 
 def process_excel(file):
     """엑셀 파일 읽기"""
-    wb = openpyxl.load_workbook(file)
-    ws = wb.active
-    data = [[cell.value for cell in row] for row in ws.iter_rows(values_only=True)]
-    return pd.DataFrame(data)
+    try:
+        wb = openpyxl.load_workbook(file)
+        ws = wb.active
+        if ws is None:
+            raise ValueError("엑셀 파일에 활성화된 워크시트가 없습니다.")
+        data = []
+        for row in ws.iter_rows(values_only=True):
+            data.append([cell if cell is not None else "" for cell in row])  # 빈 셀 처리
+        return pd.DataFrame(data)
+    except Exception as e:
+        st.error(f"엑셀 파일 처리 중 오류 발생: {e}")
+        return pd.DataFrame()  # 빈 데이터프레임 반환
 
 def perform_spell_check(df):
     """데이터프레임의 텍스트 셀에 대해 맞춤법 검사"""
@@ -39,35 +47,16 @@ if uploaded_file:
     # 엑셀 데이터 불러오기
     df = process_excel(uploaded_file)
 
-    # 원본 데이터 테이블 표시
-    st.write("### 업로드된 데이터")
-    st.markdown(
-        df.to_html(index=False, escape=False, border=1),
-        unsafe_allow_html=True,
-    )
+    if not df.empty:
+        # 원본 데이터 테이블 표시
+        st.write("### 업로드된 데이터")
+        st.dataframe(df, use_container_width=True)
 
-    # 맞춤법 검사 버튼
-    if st.button("맞춤법 검사"):
-        st.write("맞춤법 검사를 수행 중입니다...")
-        corrected_df = perform_spell_check(df)
+        # 맞춤법 검사 버튼
+        if st.button("맞춤법 검사"):
+            st.write("맞춤법 검사를 수행 중입니다...")
+            corrected_df = perform_spell_check(df)
 
-        # 맞춤법 검사 결과 표시
-        st.write("### 맞춤법 검사 결과")
-        st.markdown(
-            corrected_df.to_html(index=False, escape=False, border=1),
-            unsafe_allow_html=True,
-        )
-
-    # JavaScript로 테이블 크기 조절 가능하게 추가
-    st.markdown(
-        """
-        <script>
-        const tables = document.querySelectorAll('table');
-        tables.forEach(table => {
-            table.style.resize = 'both';
-            table.style.overflow = 'auto';
-        });
-        </script>
-        """,
-        unsafe_allow_html=True,
-    )
+            # 맞춤법 검사 결과 표시
+            st.write("### 맞춤법 검사 결과")
+            st.dataframe(corrected_df, use_container_width=True)
